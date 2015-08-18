@@ -29,6 +29,7 @@ import retrofit.client.Response;
  */
 public class MovieGridFragment extends Fragment {
     private final static String LOG_TAG = "MovieGridFragment";
+    private final static String MOVIES_LIST_KEY = "Movies";
 
     private MovieListAdapter movieListAdapter;
 
@@ -42,14 +43,26 @@ public class MovieGridFragment extends Fragment {
     }
 
     @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putParcelableArrayList(MOVIES_LIST_KEY, movieListAdapter.getMovies());
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
+        ArrayList<Movie> movieList;
+        if (savedInstanceState != null && savedInstanceState.containsKey(MOVIES_LIST_KEY)) {
+            movieList = savedInstanceState.getParcelableArrayList(MOVIES_LIST_KEY);
+        } else {
+            movieList = new ArrayList<Movie>();
+        }
         movieListAdapter =
                 new MovieListAdapter (
                         getActivity(),
                         R.layout.grid_item_movie_fragment,
-                        new ArrayList<Movie>());
+                        movieList);
 
         View rootView = inflater.inflate(R.layout.fragment_movie_grid, container, false);
 

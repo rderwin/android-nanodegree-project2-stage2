@@ -24,6 +24,10 @@ public class MovieListAdapter extends ArrayAdapter<Movie> {
         this.objects = objects;
     }
 
+    public ArrayList<Movie> getMovies() {
+        return objects;
+    }
+
     public View getView(int position, View convertView, ViewGroup parent) {
         Movie movie = objects.get(position);
         View rowView = convertView;
