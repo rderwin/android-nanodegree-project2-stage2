@@ -32,10 +32,10 @@ public class MovieGridFragment extends Fragment {
     private final static String MOVIES_LIST_KEY = "Movies";
 
     private MovieListAdapter movieListAdapter;
+    private ArrayList<Movie> movieList;
+    private String currentSortOrder = "";
 
-    public MovieGridFragment() {
-
-    }
+    public MovieGridFragment() {}
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -48,16 +48,17 @@ public class MovieGridFragment extends Fragment {
         super.onSaveInstanceState(savedInstanceState);
     }
 
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        ArrayList<Movie> movieList;
         if (savedInstanceState != null && savedInstanceState.containsKey(MOVIES_LIST_KEY)) {
             movieList = savedInstanceState.getParcelableArrayList(MOVIES_LIST_KEY);
         } else {
             movieList = new ArrayList<Movie>();
         }
+
         movieListAdapter =
                 new MovieListAdapter (
                         getActivity(),
@@ -100,14 +101,19 @@ public class MovieGridFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        updateMovies();
-    }
-
-    private void updateMovies() {
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String sortOrder = prefs.getString(getString(R.string.pref_sort_order_key),
                 getString(R.string.pref_sort_order_default));
+
+        if (movieList.size() == 0 || !sortOrder.equals(this.currentSortOrder)) {
+            this.currentSortOrder = sortOrder;
+            updateMovies(this.currentSortOrder);
+        }
+    }
+
+    private void updateMovies(String sortOrder) {
+
 
         final RestAdapter restadapter = new RestAdapter.Builder().setEndpoint("https://api.themoviedb.org/3").build();
         ResultsHelper resultsHelper = restadapter.create(ResultsHelper.class);
