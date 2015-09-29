@@ -6,7 +6,11 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends ActionBarActivity {
+import com.under_rated.popularmoviesretrofit.Model.Movie;
+
+public class MainActivity extends ActionBarActivity implements MovieGridFragment.MovieGridCallback {
+
+    private boolean twoPaneMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -14,8 +18,19 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new MovieGridFragment())
+                    .replace(R.id.movie_grid_container, new MovieGridFragment())
                     .commit();
+        }
+
+        if (findViewById(R.id.movie_details_container) != null) {
+            twoPaneMode = true;
+            if (savedInstanceState == null) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.movie_details_container, new MovieDetailsFragment())
+                        .commit();
+            }
+        } else {
+            twoPaneMode = false;
         }
     }
 
@@ -28,16 +43,32 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             startActivity(new Intent(this, MovieSettingsActivity.class));
             return true;
         }
 
         return super.onOptionsItemSelected(item);
-    }}
+    }
+
+    @Override
+    public void onItemSelected(Movie movie) {
+        if (twoPaneMode) {
+            Bundle args = new Bundle();
+            args.putParcelable("movie", movie);
+
+            MovieDetailsFragment fragment = new MovieDetailsFragment();
+            fragment.setArguments(args);
+
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.movie_details_container, fragment)
+                    .commit();
+        } else {
+            Intent intent = new Intent(this, MovieDetailsActivity.class)
+                    .putExtra("movie", movie);
+            startActivity(intent);
+        }
+    }
+}

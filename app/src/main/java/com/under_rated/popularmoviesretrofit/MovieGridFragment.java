@@ -1,6 +1,5 @@
 package com.under_rated.popularmoviesretrofit;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -17,6 +16,8 @@ import com.under_rated.popularmoviesretrofit.Model.Movie;
 import com.under_rated.popularmoviesretrofit.Model.ResultsPage;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import retrofit.Callback;
 import retrofit.RestAdapter;
@@ -72,24 +73,9 @@ public class MovieGridFragment extends Fragment {
 
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+
                 Movie selectedMovie = movieListAdapter.getItem(position);
-
-                //Movie details layout contains title, release date, movie poster, vote average,
-                //and plot synopsis.
-                String title = selectedMovie.getTitle();
-
-                String detail_text = "Release Date: " + selectedMovie.getRelease_date() + "\n" +
-                        "Vote Average: " + selectedMovie.getVote_average() + "\n" +
-                        "Plot Synopsis: " + selectedMovie.getOverview();
-
-                String posterPath = "http://image.tmdb.org/t/p/w500" + selectedMovie.getPoster_path();
-
-                Intent intent = new Intent(getActivity(), MovieDetailsActivity.class)
-                        .putExtra(Intent.EXTRA_TITLE, title)
-                        .putExtra(Intent.EXTRA_TEXT, detail_text)
-                        .putExtra(Intent.EXTRA_HTML_TEXT, posterPath);
-
-                startActivity(intent);
+                ((MovieGridCallback) getActivity()).onItemSelected(selectedMovie);
             }
         });
         gridView.setAdapter(movieListAdapter);
@@ -97,6 +83,9 @@ public class MovieGridFragment extends Fragment {
         return rootView;
     }
 
+    public interface MovieGridCallback {
+        public void onItemSelected(Movie movie);
+    }
 
     @Override
     public void onStart() {
@@ -108,13 +97,19 @@ public class MovieGridFragment extends Fragment {
 
         if (movieList.size() == 0 || !sortOrder.equals(this.currentSortOrder)) {
             this.currentSortOrder = sortOrder;
-            updateMovies(this.currentSortOrder);
+            if (this.currentSortOrder.equals(getString(R.string.pref_sort_order_favorites_key))) {
+                movieListAdapter.clear();
+                Set<String> favorites = prefs.getStringSet(getString(R.string.pref_favorites_key), new HashSet<String>());
+                for (String movieId : favorites) {
+                    loadMovie(movieId);
+                }
+            } else {
+                updateMovies(this.currentSortOrder);
+            }
         }
     }
 
     private void updateMovies(String sortOrder) {
-
-
         final RestAdapter restadapter = new RestAdapter.Builder().setEndpoint("https://api.themoviedb.org/3").build();
         ResultsHelper resultsHelper = restadapter.create(ResultsHelper.class);
 
@@ -134,8 +129,25 @@ public class MovieGridFragment extends Fragment {
                 Log.e(LOG_TAG, error.toString());
             }
         });
-
-
     }
+
+    private void loadMovie(String movieId) {
+        final RestAdapter restadapter = new RestAdapter.Builder().setEndpoint("https://api.themoviedb.org/3").build();
+        ResultsHelper resultsHelper = restadapter.create(ResultsHelper.class);
+
+        resultsHelper.getMovie(Integer.valueOf(movieId), ResultsHelper.api_key, new Callback<Movie>() {
+            @Override
+            public void success(Movie movie, Response response) {
+                movieListAdapter.add(movie);
+            }
+
+            @Override
+            public void failure(RetrofitError error) {
+                Log.e(LOG_TAG, error.toString());
+            }
+        });
+    }
+
+
 
 }
